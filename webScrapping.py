@@ -74,7 +74,7 @@ class WebScrapping:
         for torrent in list_torrents:
             driver.get(f"https://thepiratebay.org"+torrent.link)
             soup = BeautifulSoup(driver.page_source, "lxml")
-            torrent.setLink(soup.select("a")[10]["href"]) #Set to one but 2
+            torrent.setLink(soup.select("a")[10]["href"]) 
         return list_torrents
 
     def get1337(self, driver, search_keyword):
@@ -99,10 +99,3 @@ class WebScrapping:
             soup = BeautifulSoup(driver.page_source, "lxml")
             torrent.setLink(soup.select("div.clearfix")[2].select_one("a")["href"])
         return list_torrents
-
-list_scrap = WebScrapping("lord of the rings").get_result()
-for torrent in list_scrap:
-    print({
-        "Name : "+ torrent.name,
-        "Seed : "+ str(torrent.seed)
-    })

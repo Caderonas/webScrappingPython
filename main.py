@@ -1,51 +1,106 @@
-from stem import Signal
-from stem.control import Controller
-from selenium import webdriver
-from webdriver_manager.firefox import GeckoDriverManager 
-from bs4 import BeautifulSoup
+import sys
+import webScrapping as WS
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtGui import QAction, QPainter
+from PySide6.QtWidgets import (QLabel, QLineEdit, QPushButton, QApplication,
+    QGridLayout, QWidget, QMainWindow, QTableWidgetItem, QTableWidget, QHeaderView)
 
-# signal TOR for a new connection
-def switchIP():
-    with Controller.from_port(port = 4444) as controller:
-        controller.authenticate()
-        controller.signal(Signal.NEWNYM)
+class Widget(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        self.items = 0
+        # Create widgets
+        self.title = QLabel("WebScrapping App")
+        self.label = QLabel("Search :")
+        self.research = QLineEdit()
+        self.button = QPushButton("Enter")
 
-# get a new selenium webdriver with tor as the proxy
-def my_proxy(PROXY_HOST,PROXY_PORT):
-    fp = webdriver.FirefoxProfile()
-    # Direct = 0, Manual = 1, PAC = 2, AUTODETECT = 4, SYSTEM = 5
-    browser = webdriver.Firefox(executable_path=”/home/linuxbrew/.linuxbrew/Cellar/geckodriver/0.30.0/bon/geckodriver”)
+        self.table = QTableWidget()
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Name", "Seed"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        # Create layout and add widgets
+        layout = QGridLayout()
+        layout.addWidget(self.title, 0 ,0)
+        layout.addWidget(self.label, 1, 0)
+        layout.addWidget(self.research, 1, 1)
+        layout.addWidget(self.button, 1, 2)
+        layout.addWidget(self.table, 2, 0)
+        # Set dialog layout
+        self.setLayout(layout)
+        # Add button signal to greetings slot
+        self.button.clicked.connect(self.run_search)
+        
+    @Slot()
+    # Greets the user
+    def run_search(self):
+        print ("Running search")
+        self.add_element()
+        print ("Table print")
+    def fill_table(self, data=None):
+        self.torrents = WS.WebScrapping.get_result(f"{self.research.text()}")
+
+        for torrent in self.torrents:
+            torrent_name = QTableWidgetItem(torrent.name)
+            torrent_seed = QTableWidgetItem(f"{torrent.seed:.4f}")
+            torrent.seed.setTextAlignment(Qt.AlignRight)
+            self.table.insertRow(self.items)
+            self.table.setItem(self.items, 0, torrent_name)
+            self.table.setItem(self.items, 1, torrent_seed)
+            self.items += 1
+    @Slot()
+    def add_element(self):
+        torrents = WS.WebScrapping(self.research.text()).get_result()
+        try:
+            for torrent in torrents:
+                name_item = QTableWidgetItem(torrent.name)
+                name_item.setTextAlignment(Qt.AlignRight)
+
+                self.table.insertRow(self.items)
+                seed_item = QTableWidgetItem(str(torrent.seed))
+
+                self.table.setItem(self.items, 0, name_item)
+                self.table.setItem(self.items, 1, seed_item)
+
+                self.torrent.name.setText("")
+                self.torrent.seed.setText("")
+
+                self.items += 1
+        except ValueError:
+            print("Wrong price", price)
+
+class MainWindow(QMainWindow):
+    def __init__(self, widget):
+        QMainWindow.__init__(self)
+        self.setWindowTitle("WebScrapping App")
+
+        # Menu
+        self.menu = self.menuBar()
+        self.file_menu = self.menu.addMenu("File")
+
+        # Exit QAction
+        exit_action = QAction("Exit", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.exit_app)
+
+        self.file_menu.addAction(exit_action)
+        self.setCentralWidget(widget)
+
+    @Slot()
+    def exit_app(self, checked):
+            QApplication.quit()
     
-    
-    return driver
-proxy = my_proxy("127.0.0.1", 9050)
-proxy.get("http://piratebayo3klnzokct3wt5yyxb2vpebbuyjl7m623iaxmqhsd52coid.onion")
-html = proxy.page_source
-soup = BeautifulSoup(html, 'lxml')
-print(soup)
-switchIP()
-"""
-def create_torbrowser_webdriver_instance():
-    DRIVER_PATH = './drivers/geckodriver'
-    options = Options()
-    options.headless = True
-    options.add_argument("--window-size=1920,1200")
 
-    driver = webdriver.Firefox(options=options, executable_path=DRIVER_PATH)
-    driver.get("https://www.nintendo.com/")
-    print(driver.page_source)
-    driver.quit()
+if __name__ == "__main__":
+    # Qt Application
+    app = QApplication(sys.argv)
+    # QWidget
+    widget = Widget()
+    # QMainWindow using QWidget as central widget
+    window = MainWindow(widget)
+    window.resize(800, 600)
+    window.show()
 
-if __name__ == '__main__':
-    create_torbrowser_webdriver_instance()
-
-def searchEngine(name):
-    name = name.replace(" ", "+")
-    source = requests.get('https://thepiratebay.org/search.php?q='+name+'&all=on&search=Pirate+Search&page=0&orderby=').text
-    print ('https://thepiratebay.org/search.php?q='+name+'&all=on&search=Pirate+Search&page=0&orderby=')
-
-    soup = BeautifulSoup(source, 'lxml')
-    print (soup.prettify())
-
-searchEngine("lord of the ring")
-"""
+    # Execute application
+    sys.exit(app.exec())
