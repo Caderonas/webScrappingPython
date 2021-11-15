@@ -1,4 +1,3 @@
-from re import search
 import sys
 import webScrapping as WS
 from PySide6.QtCore import Qt, Slot
@@ -42,26 +41,12 @@ class Widget(QWidget):
         print ("Running search")
         self.add_element()
         print ("Table print")
-    """
-    def fill_table(self, data=None):
-        self.torrents = WS.WebScrapping.get_result(f"{self.research.text()}")
 
-        for torrent in self.torrents:
-            torrent_name = QTableWidgetItem(torrent.name)
-            torrent_seed = QTableWidgetItem(f"{torrent.seed:.4f}")
-            torrent.seed.setTextAlignment(Qt.AlignRight)
-            self.table.insertRow(self.items)
-            self.table.setItem(self.items, 0, torrent_name)
-            self.table.setItem(self.items, 1, torrent_seed)
-            self.items += 1
-    """
-    @Slot()
     def add_element(self):
-        #self.table.setRowCount(0)
-        #self.table.setRowCount(20)
-        torrents = WS.WebScrapping(self.research.text()).get_result()
+        self.items = 0
+        self.torrents = WS.WebScrapping(self.research.text()).get_result()
         try:
-            for torrent in torrents:
+            for torrent in self.torrents:
                 date_item = QTableWidgetItem(torrent.date)
                 date_item.setTextAlignment(Qt.AlignLeft)
 
@@ -75,7 +60,7 @@ class Widget(QWidget):
                 ratio_item.setTextAlignment(Qt.AlignLeft)
 
                 button_item = QPushButton("Stream")
-                #button_item.clicked.connect(self.get_stream(torrent.src, torrent.link))
+                
 
                 self.table.insertRow(self.items)
 
@@ -84,17 +69,12 @@ class Widget(QWidget):
                 self.table.setItem(self.items, 2, size_item)
                 self.table.setItem(self.items, 3, ratio_item)
                 self.table.setCellWidget(self.items, 4, button_item)
-                #self.table.setItem(self.items, 4, button_item)
                 self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+                button_item.clicked.connect(torrent.get_magnet)
                 self.items += 1
         except ValueError:
-            print("Wrong price", self.research)
-    @Slot()
-    def get_stream(self, src, link):
-        magnet = WS.WebScrapping.get_magnet(src, link)
-        print (magnet)
-        return magnet
+            print("Wrong search ", self.research)
+
 class MainWindow(QMainWindow):
     def __init__(self, widget):
         QMainWindow.__init__(self)

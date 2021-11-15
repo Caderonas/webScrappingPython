@@ -16,6 +16,13 @@ from bs4 import BeautifulSoup
     with the get_result function
 
 """
+def configure_firefox_driver():
+        firefox_options = FirefoxOptions()
+        firefox_options.add_argument("--ignore-certificate-errors")
+        firefox_options.add_argument("--incognito")
+        firefox_options.add_argument("--headless")
+        driver = webdriver.Firefox(executable_path = "geckodriver", options = firefox_options)
+        return driver
 class WebScrapping:
 
     
@@ -23,7 +30,7 @@ class WebScrapping:
         #start = time.time()
         """ Driver """
         #self.state = "Starting driver..."
-        driver = self.configure_firefox_driver()
+        driver = configure_firefox_driver()
         #self.state = "Driver charged : "+ str(time.time() - start)
         self.resultWS = []
         while True:
@@ -52,13 +59,7 @@ class WebScrapping:
         self.resultWS.sort(key=lambda x: x.seed, reverse=True)
         driver.close()
 
-    def configure_firefox_driver(self):
-        firefox_options = FirefoxOptions()
-        firefox_options.add_argument("--ignore-certificate-errors")
-        firefox_options.add_argument("--incognito")
-        firefox_options.add_argument("--headless")
-        driver = webdriver.Firefox(executable_path = "geckodriver", options = firefox_options)
-        return driver
+    
 
     def get_result(self):
         """
@@ -74,15 +75,6 @@ class WebScrapping:
         """
         return self.resultWS
 
-    def get_magnet(self, src, link):
-        driver = self.configure_firefox_driver()
-        driver.get(link)
-        soup = BeautifulSoup(driver.page_source, "lxml")
-        if src == "PirateBay":
-            return soup.select("a")[10]["href"]
-        elif src == "1337":
-            return soup.select("div.clearfix")[2].select_one("a")["href"]
-
     class Torrent:
         def __init__(self, src, name, date, size, seed, leech, link):
             self.src = src
@@ -93,9 +85,25 @@ class WebScrapping:
             self.leech= int(leech)
             self.link = link
         
-        def setLink(self, link):
+        def set_link(self, link):
             self.link = link
-
+        #@Slot()
+        def get_magnet(self):
+            driver = configure_firefox_driver()
+            driver.get(self.link)
+            soup = BeautifulSoup(driver.page_source, "lxml")
+            if self.src == "PirateBay":
+                magnet = soup.select("a")[10]["href"]
+            elif self.src == "1337":
+                magnet = soup.select("div.clearfix")[2].select_one("a")["href"]
+            driver.close()
+            print (magnet)
+            return magnet
+    """
+    def get_stream(self, id):
+        self.magnet = self.resultWS[id].get_magnet()
+        return self.magnet
+    """
     def uniSize(self, string):
         string = string.lower()
         coef = 0
@@ -133,7 +141,7 @@ class WebScrapping:
         for torrent in list_torrents:
             driver.get(f"https://thepiratebay.org"+torrent.link)
             soup = BeautifulSoup(driver.page_source, "lxml")
-            torrent.setLink(soup.select("a")[10]["href"]) 
+            torrent.set_link(soup.select("a")[10]["href"]) 
         """
         return list_torrents
 
@@ -164,9 +172,10 @@ class WebScrapping:
         for torrent in list_torrents:
             driver.get(f"https://1337x.to"+torrent.link)
             soup = BeautifulSoup(driver.page_source, "lxml")
-            torrent.setLink(soup.select("div.clearfix")[2].select_one("a")["href"])
+            torrent.set_link(soup.select("div.clearfix")[2].select_one("a")["href"])
         """
         return list_torrents
+
 """ 
 if __name__ == "__main__":
     # Qt Application
@@ -176,4 +185,5 @@ if __name__ == "__main__":
     print (time.time()-start)
     for torrent in torrents:
         print (torrent.name)
+
 """
