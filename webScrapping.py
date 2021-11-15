@@ -1,4 +1,7 @@
 import re
+import time
+import json
+import os
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -13,12 +16,39 @@ from bs4 import BeautifulSoup
     with the get_result function
 
 """
-
 class WebScrapping:
+
+    
     def __init__(self, search_keyword):
+        #start = time.time()
+        """ Driver """
+        #self.state = "Starting driver..."
         driver = self.configure_firefox_driver()
-        self.resultWS = self.getPirateBay(driver, search_keyword)
-        self.resultWS += self.get1337(driver, search_keyword)
+        #self.state = "Driver charged : "+ str(time.time() - start)
+        self.resultWS = []
+        while True:
+            try:
+                #start = time.time()
+                #self.state = "PirateBay ..."
+                self.resultWS += self.getPirateBay(driver, search_keyword)
+                #self.state = "PirateBay charged " + str(time.time() - start)
+                break
+            except IndexError:
+                print ("PirateBay : Dammn shit, a page didn't charge well")
+            except AttributeError:
+                print ("PirateBays : Connect the VPN")
+        while True:
+            try:
+                #start = time.time()
+                #self.state = "1337 ..."
+                self.resultWS += self.get1337(driver, search_keyword)
+                #self.state = "1337 charged " + str(time.time() - start)
+                break
+            except IndexError:
+                print ("1337 : Dammn shit, a page didn't charge well")
+            except AttributeError:
+                print ("1337 : Connect the VPN")
+        
         self.resultWS.sort(key=lambda x: x.seed, reverse=True)
         driver.close()
 
@@ -31,9 +61,31 @@ class WebScrapping:
         return driver
 
     def get_result(self):
-        return self.resultWS 
+        """
+        os.chdir(r"./webScrappingPython/")
+        print (os.getcwd())
+        with open(r"./torrents.json", "r+") as file:
+            file_data = json.load(file)
+            for torrent in self.resultWS:
+                jsonStr = json.dumps(torrent)
+                file_data.append(jsonStr)
+            json.dump(self.resultWS, file, indent=4)
+        file.close()
+        """
+        return self.resultWS
+
+    def get_magnet(self, src, link):
+        driver = self.configure_firefox_driver()
+        driver.get(link)
+        soup = BeautifulSoup(driver.page_source, "lxml")
+        if src == "PirateBay":
+            return soup.select("a")[10]["href"]
+        elif src == "1337":
+            return soup.select("div.clearfix")[2].select_one("a")["href"]
+
     class Torrent:
-        def __init__(self, name, date, size, seed, leech, link):
+        def __init__(self, src, name, date, size, seed, leech, link):
+            self.src = src
             self.name = name
             self.date = date
             self.size = float(size)
@@ -57,45 +109,71 @@ class WebScrapping:
     def getPirateBay(self, driver, search_keyword):
         list_torrents = []
         driver.get(f"https://thepiratebay.org/search.php?q="+search_keyword+"&all=on&search=Pirate+Search&page=0&orderby=")
+        """
         WebDriverWait(driver, 5).until(
             lambda s: s.find_element(By.ID,"torrents").is_displayed()
         )
+        """
         soup = BeautifulSoup(driver.page_source, "lxml")
         for torrents in soup.select("ol.view-single"):
             for torrent in torrents.select("li.list-entry"):
-                list_torrents.append(self.Torrent(  torrent.select_one("span.item-name").text,
+                list_torrents.append(self.Torrent(  "PirateBay",
+                                                    torrent.select_one("span.item-name").text,
                                                     torrent.select_one("span.item-uploaded").text,
                                                     self.uniSize(torrent.select_one("span.item-size").text),
                                                     torrent.select_one("span.item-seed").text,
                                                     torrent.select_one("span.item-leech").text,
-                                                    torrent.select("span.item-name > a")[0]["href"]))
+                                                    "https://thepiratebay.org"+torrent.select("span.item-name > a")[0]["href"]))
+                if len(list_torrents) == 10:
+                    return list_torrents
+        """
         list_torrents.sort(key=lambda x: x.seed, reverse=True)
         list_torrents = list_torrents[0:9]
+        
         for torrent in list_torrents:
             driver.get(f"https://thepiratebay.org"+torrent.link)
             soup = BeautifulSoup(driver.page_source, "lxml")
             torrent.setLink(soup.select("a")[10]["href"]) 
+        """
         return list_torrents
 
     def get1337(self, driver, search_keyword):
         list_torrents = []
         driver.get(f"https://1337x.to/search/"+search_keyword+"/1/")
+        """
         WebDriverWait(driver, 5).until(
             lambda s: s.find_element(By.CLASS_NAME,"table-list").is_displayed()
         )
+        """
         soup = BeautifulSoup(driver.page_source, "lxml")
         for torrents in soup.select("table.table-list > tbody"):
             for torrent in torrents.select("tr"):
-                list_torrents.append(self.Torrent(  torrent.select("td.coll-1 > a")[1].text,
+                list_torrents.append(self.Torrent(  "1337",
+                                                    torrent.select("td.coll-1 > a")[1].text,
                                                     torrent.select_one("td.coll-date").text,
                                                     self.uniSize(torrent.select_one("td.coll-4").text),
                                                     torrent.select_one("td.coll-2").text,
                                                     torrent.select_one("td.coll-3").text,
-                                                    torrent.select("td.coll-1 > a")[1]["href"]))
+                                                    "https://1337x.to"+torrent.select("td.coll-1 > a")[1]["href"]))
+                if len(list_torrents) == 10:
+                    return list_torrents
+        """
         list_torrents.sort(key=lambda x: x.seed, reverse=True)
         list_torrents = list_torrents[0:9]
+        
         for torrent in list_torrents:
             driver.get(f"https://1337x.to"+torrent.link)
             soup = BeautifulSoup(driver.page_source, "lxml")
             torrent.setLink(soup.select("div.clearfix")[2].select_one("a")["href"])
+        """
         return list_torrents
+""" 
+if __name__ == "__main__":
+    # Qt Application
+    start = time.time()
+    torrents = WebScrapping("lord of the ring").get_result()
+    
+    print (time.time()-start)
+    for torrent in torrents:
+        print (torrent.name)
+"""
