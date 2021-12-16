@@ -36,7 +36,6 @@ class Widget(QWidget):
         self.button.clicked.connect(self.run_search)
         
     @Slot()
-    # Greets the user
     def run_search(self):
         print ("Running search")
         self.add_element()
@@ -70,7 +69,7 @@ class Widget(QWidget):
                 self.table.setItem(self.items, 3, ratio_item)
                 self.table.setCellWidget(self.items, 4, button_item)
                 self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-                button_item.clicked.connect(torrent.get_magnet)
+                button_item.clicked.connect(SimpleTorrentStreaming  (torrent.get_magnet))
                 self.items += 1
         except ValueError:
             print("Wrong search ", self.research)

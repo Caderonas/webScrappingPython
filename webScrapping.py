@@ -1,4 +1,6 @@
 import re
+import sys
+import subprocess
 import time
 import json
 import os
@@ -7,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from webdriver_manager.firefox import GeckoDriverManager
 from bs4 import BeautifulSoup
 
 """ Webscrapping of The pirate bay 
@@ -17,15 +20,14 @@ from bs4 import BeautifulSoup
 
 """
 def configure_firefox_driver():
-        firefox_options = FirefoxOptions()
-        firefox_options.add_argument("--ignore-certificate-errors")
-        firefox_options.add_argument("--incognito")
-        firefox_options.add_argument("--headless")
-        driver = webdriver.Firefox(executable_path = "geckodriver", options = firefox_options)
-        return driver
+    firefox_options = FirefoxOptions()
+    firefox_options.add_argument("--ignore-certificate-errors")
+    firefox_options.add_argument("--incognito")
+    firefox_options.add_argument("--headless")
+    driver = webdriver.Firefox(executable_path = GeckoDriverManager().install(), options = firefox_options)
+    return driver
 class WebScrapping:
 
-    
     def __init__(self, search_keyword):
         #start = time.time()
         """ Driver """
@@ -97,8 +99,7 @@ class WebScrapping:
             elif self.src == "1337":
                 magnet = soup.select("div.clearfix")[2].select_one("a")["href"]
             driver.close()
-            print (magnet)
-            return magnet
+            subprocess.call("peerflix "+ magnet + " --vlc")
     """
     def get_stream(self, id):
         self.magnet = self.resultWS[id].get_magnet()
@@ -176,7 +177,7 @@ class WebScrapping:
         """
         return list_torrents
 
-""" 
+'''
 if __name__ == "__main__":
     # Qt Application
     start = time.time()
@@ -185,5 +186,4 @@ if __name__ == "__main__":
     print (time.time()-start)
     for torrent in torrents:
         print (torrent.name)
-
-"""
+'''
