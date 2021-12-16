@@ -3,9 +3,9 @@ A web scrapping app using Python
 
 ## How to run 
 Install dependencies :
-'''
-pip install Pyside6 Selenium bs4 SimpleTorrentStreaming webdriver-manager
-'''
+
+'pip install Pyside6 Selenium bs4 SimpleTorrentStreaming webdriver-manager'
+
 
 ## To do
 1. Change BeautifulSoup to Scrappy to optimize speed
